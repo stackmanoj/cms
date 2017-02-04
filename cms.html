@@ -31,12 +31,12 @@
                                 $(cloneObj).find('.label-name').text(item);
                                 $(cloneObj).find('.input').html('<input type="text" id="' + item + '" name="' + item + '" class="form-control" />');
                                 finalHtml += $(cloneObj).clone().wrapAll("<div/>").parent().html();
-                                $(cloneObj).find('.input').html('@@Html.TextBoxFor(x => x.' + item + ', new { @@class = "form-control" })');
+                                $(cloneObj).find('.input').html('@Html.TextBoxFor(x => x.' + item + ', new { @class = "form-control" })');
                                 if (validation == 0) {
                                     $(cloneObj).find('.validation').remove();
                                 }
                                 else {
-                                    $(cloneObj).find('.validation').replaceWith('@@Html.ValidationMessageFor(x => x.' + item + ')');
+                                    $(cloneObj).find('.validation').replaceWith('@Html.ValidationMessageFor(x => x.' + item + ')');
                                 }
                                 src += $(cloneObj).clone().wrapAll("<div/>").parent().html().replace(/\&gt;/g, '>') + '\n';
                             }
