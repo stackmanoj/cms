@@ -8,137 +8,205 @@
 </head>
 <body class="container">
     <script>
-    $(function () {
-        $('#btn-create-html').click(function () {
-            var columns = $('#ddl-columns').val();
-            var labelPosition = $('#ddl-label-position').val();
-            var properties = $('#txt-properties').val();
-            var validation = $('#ddl-model-validation').val();
-            if (properties != null && properties != '') {
-                var div = $('#div-cms-col-' + columns + '-label-' + labelPosition + '');
-                if (div.length > 0) {
-                    var originalCloneObj = $(div).find('.form-group').clone();
-                    var finalHtml = '';
-                    var src = '';
-                    var modelSrc = '';
-                    var arrProps = properties.split(',');
-                    if (arrProps.length > 0) {
-                        $(arrProps).each(function (index, item) {
-                            var cloneObj = originalCloneObj;
-                            item = item.trim();
-                            if (item != '') {
-                                modelSrc += 'public string ' + item + ' { get; set; }\n';
-                                $(cloneObj).find('.label-name').text(item);
-                                $(cloneObj).find('.input').html('<input type="text" id="' + item + '" name="' + item + '" class="form-control" />');
-                                finalHtml += $(cloneObj).clone().wrapAll("<div/>").parent().html();
-                                $(cloneObj).find('.input').html('@Html.TextBoxFor(x => x.' + item + ', new { @class = "form-control" })');
-                                if (validation == 0) {
-                                    $(cloneObj).find('.validation').remove();
+        $(function () {
+            $('#btn-create-html').click(function () {
+                var columns = $('#ddl-columns').val();
+                var labelPosition = $('#ddl-label-position').val();
+                var properties = $('#txt-properties').val();
+                var validation = $('#ddl-model-validation').val();
+                var entity = $('#txt-entity').val();
+                if (properties != null && properties != '') {
+                    var div = $('#div-cms-col-' + columns + '-label-' + labelPosition + '');
+                    if (div.length > 0) {
+                        var originalCloneObj = $(div).find('.form-group').clone();
+                        var finalHtml = '';
+                        var src = '';
+                        var modelSrc = '';
+                        var arrProps = properties.split(',');
+                        if (arrProps.length > 0) {
+                            $(arrProps).each(function (index, item) {
+                                var cloneObj = originalCloneObj;
+                                item = item.trim();
+                                if (item != '') {
+                                    var dataType = "string";
+                                    var propertyName = item;
+                                    var arrItem = item.split(':');
+                                    if (arrItem.length == 2) {
+                                        dataType = arrItem[1];
+                                        propertyName = arrItem[0];
+                                    }
+                                    modelSrc += 'public ' + dataType + ' ' + propertyName + ' { get; set; }\n';
+                                    $(cloneObj).find('.label-name').text(propertyName);
+                                    $(cloneObj).find('.input').html('<input type="text" id="' + propertyName + '" name="' + propertyName + '" class="form-control" />');
+                                    finalHtml += $(cloneObj).clone().wrapAll("<div/>").parent().html();
+                                    $(cloneObj).find('.input').html('@Html.TextBoxFor(x => x.' + propertyName + ', new { @class = "form-control" })');
+                                    if (validation == 0) {
+                                        $(cloneObj).find('.validation').remove();
+                                    }
+                                    else {
+                                        $(cloneObj).find('.validation').replaceWith('@Html.ValidationMessageFor(x => x.' + propertyName + ')');
+                                    }
+                                    src += $(cloneObj).clone().wrapAll("<div/>").parent().html().replace(/\&gt;/g, '>') + '\n';
                                 }
-                                else {
-                                    $(cloneObj).find('.validation').replaceWith('@Html.ValidationMessageFor(x => x.' + item + ')');
-                                }
-                                src += $(cloneObj).clone().wrapAll("<div/>").parent().html().replace(/\&gt;/g, '>') + '\n';
-                            }
-                        });
-                        $('#div-src').text(src);
-                        $('#div-model-src').text(modelSrc);
-                        $('#div-content').html(finalHtml);
+                            });
+                            
+                            $('#div-src').text(src);
+                            $('#div-model-src').text(modelSrc);
+                            $('#div-content').html(finalHtml);
+                        }
                     }
                 }
-            }
-            else {
-                alert('Please enter property names.')
-                return false;
-            }
+                if (entity != null && entity != '') {
+                    var interfaceData = '#region ' + entity + '\n'
+                                         + 'void Delete' + entity + '(' + entity + ' entity);\n'
+                                         + 'Departments Get' + entity + 'ById(int id);\n'
+                                         + 'IList<' + entity + '> GetAll' + entity + '();\n'
+                                         + 'IList<' + entity + '> GetAll' + entity + 'ByPracticeId(int practiceId);\n'
+                                         + 'void Save' + entity + '(' + entity + ' entity);\n'
+                                         + '#endregion ' + entity + '';
+                    $('#div-interface-src').text(interfaceData);
+                    var serviceData = '#region ' + entity + '\n'
+                    + 'public virtual void Delete' + entity + '(' + entity + ' entity)\n'
+                    + '{\n'
+                    + '    if (entity == null)\n'
+                    + '        throw new ArgumentNullException("RoleType");\n'
+                    + '    _' + entity.toLowerCase() + 'Repository.Delete(entity);\n'
+                    + '}\n'
+                    + 'public virtual ' + entity + ' Get' + entity + 'ById(int id)\n'
+                    + '{\n'
+                    + '    if (id == 0)\n'
+                    + '       return null;\n'
+                    + '    var obj = _' + entity.toLowerCase() + 'Repository.GetById(id);\n'
+                    + '    return obj;\n'
+                    + '}\n'
+                    + 'public virtual IList<' + entity + '> GetAll' + entity + '()\n'
+                    + '{\n'
+                    + '    var query = from cr in _' + entity.toLowerCase() + 'Repository.Table\n'
+                    + '              select cr;\n'
+                    + '    var departments = query.ToList();\n'
+                    + '    return departments;\n'
+                    + '}\n'
+                    + 'public virtual IList<' + entity + '> GetAll' + entity + 'ByPracticeId(int practiceId)\n'
+                    + '{\n'
+                    + '    var query = from cr in _' + entity.toLowerCase() + 'Repository.Table\n'
+                    + '    where cr.PracticeId == practiceId\n'
+                    + '    select cr;\n'
+                    + '    var objList = query.ToList();\n'
+                    + '    return objList;\n'
+                    + '}\n'
+                    + 'public virtual void Save' + entity + '(' + entity + ' entity)\n'
+                    + '{\n'
+                    + '    if (entity == null)\n'
+                    + '        throw new ArgumentNullException("RoleType");\n'
+                    + '    if (entity.Id > 0)\n'
+                    + '        _' + entity.toLowerCase() + 'Repository.Update(entity);\n'
+                    + '    else\n'
+                    + '        _' + entity.toLowerCase() + 'Repository.Insert(entity);\n'
+                    + '}\n'
+                    + ' #endregion\n';
+                    $('#div-service-src').text(serviceData);
+                }
+            })
         })
-    })
-</script>
-<div class="row">
-    <div class="col-sm-2 form-group">
-        <label class="label-name">Column</label>
-        <select id="ddl-columns" class="form-control">
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-        </select>
+    </script>
+    <div class="row">
+        <div class="col-sm-2 form-group">
+            <label class="label-name">Column</label>
+            <select id="ddl-columns" class="form-control">
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+            </select>
+        </div>
+        <div class="col-sm-2 form-group">
+            <label class="label-name">Label position</label>
+            <select id="ddl-label-position" class="form-control">
+                <option value="left">Left</option>
+                <option value="up">Up</option>
+            </select>
+        </div>
+        <div class="col-sm-2 form-group">
+            <label class="label-name">Model Validation</label>
+            <select id="ddl-model-validation" class="form-control">
+                <option value="0">No</option>
+                <option value="1">Yes</option>
+            </select>
+        </div>
+        <div class="col-sm-6 form-group">
+            <label class="label-name">Property Names (Comma seperated)</label>
+            <input type="text" id="txt-properties" class="form-control" />
+        </div>
     </div>
-    <div class="col-sm-2 form-group">
-        <label class="label-name">Label position</label>
-        <select id="ddl-label-position" class="form-control">
-            <option value="left">Left</option>
-            <option value="up">Up</option>
-        </select>
+    <div class="row">
+        <div class="col-sm-3 form-group">
+            <label class="label-name">Entity Name</label>
+            <input type="text" id="txt-entity" class="form-control" />
+        </div>
     </div>
-    <div class="col-sm-2 form-group">
-        <label class="label-name">Model Validation</label>
-        <select id="ddl-model-validation" class="form-control">
-            <option value="0">No</option>
-            <option value="1">Yes</option>
-        </select>
+    <div class="row form-group text-center">
+        <input type="button" id="btn-create-html" value="Create Html" class="btn btn-primary" />
     </div>
-    <div class="col-sm-6 form-group">
-        <label class="label-name">Property Names (Comma seperated)</label>
-        <input type="text" id="txt-properties" class="form-control" />
+    <div id="div-content">
     </div>
-</div>
-<div class="row form-group text-center">
-    <input type="button" id="btn-create-html" value="Create Html" class="btn btn-primary" />
-</div>
-
-<div id="div-content">
-</div>
-<div style="clear:both"></div>
+    <div style="clear:both"></div>
+    <h2>Html</h2>
 <pre id="div-src">
 </pre>
+    <h2>Model</h2>
 <pre id="div-model-src">
 </pre>
-<div id="div-cms-col-2-label-left" class="hidden">
-    <div class="col-sm-6 form-group">
-        <label class="col-sm-3 col-form-label label-name"></label>
-        <div class="col-sm-9 input">
-        </div>
-        <div class="validation">
-        </div>
-    </div>
-</div>
-<div id="div-cms-col-1-label-left" class="hidden">
-    <div class="row form-group">
-        <label class="col-sm-2 col-form-label label-name"></label>
-        <div class="col-sm-10 input">
-        </div>
-        <div class="validation">
+    <h2>Interface</h2>
+<pre id="div-interface-src">
+</pre>
+    <h2>Service</h2>
+    <pre id="div-service-src">
+</pre>
+    <div id="div-cms-col-2-label-left" class="hidden">
+        <div class="col-sm-6 form-group">
+            <label class="col-sm-3 col-form-label label-name"></label>
+            <div class="col-sm-9 input">
+            </div>
+            <div class="validation">
+            </div>
         </div>
     </div>
-</div>
-<div id="div-cms-col-1-label-up" class="hidden">
-    <div class="col-sm-12 form-group">
-        <label class="label-name"></label>
-        <div class="input">
+    <div id="div-cms-col-1-label-left" class="hidden">
+        <div class="row form-group">
+            <label class="col-sm-2 col-form-label label-name"></label>
+            <div class="col-sm-10 input">
+            </div>
+            <div class="validation">
+            </div>
         </div>
     </div>
-</div>
-<div id="div-cms-col-2-label-up" class="hidden">
-    <div class="col-sm-6 form-group">
-        <label class="label-name"></label>
-        <div class="input">
+    <div id="div-cms-col-1-label-up" class="hidden">
+        <div class="col-sm-12 form-group">
+            <label class="label-name"></label>
+            <div class="input">
+            </div>
         </div>
     </div>
-</div>
-<div id="div-cms-col-3-label-up" class="hidden">
-    <div class="col-sm-4 form-group">
-        <label class="label-name"></label>
-        <div class="input">
+    <div id="div-cms-col-2-label-up" class="hidden">
+        <div class="col-sm-6 form-group">
+            <label class="label-name"></label>
+            <div class="input">
+            </div>
         </div>
     </div>
-</div>
-<div id="div-cms-col-4-label-up" class="hidden">
-    <div class="col-sm-3 form-group">
-        <label class="label-name"></label>
-        <div class="input">
+    <div id="div-cms-col-3-label-up" class="hidden">
+        <div class="col-sm-4 form-group">
+            <label class="label-name"></label>
+            <div class="input">
+            </div>
         </div>
     </div>
-</div>
+    <div id="div-cms-col-4-label-up" class="hidden">
+        <div class="col-sm-3 form-group">
+            <label class="label-name"></label>
+            <div class="input">
+            </div>
+        </div>
+    </div>
 </body>
 </html>
